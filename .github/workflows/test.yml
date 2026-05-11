@@ -1,0 +1,35 @@
+name: smoke
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install requests
+
+      - name: run_wave inline tests
+        run: python3 run_wave.py --test
+
+      - name: hmac_verifier help
+        run: python3 hmac_verifier.py --help
+
+      - name: reward_hack_detector help
+        run: python3 reward_hack_detector.py --help
+
+      - name: hmac_verifier on sample
+        run: python3 hmac_verifier.py EXAMPLES/sample_1x4_pr_review.jsonl || echo "expected non-zero (sample is illustrative; not real HMAC)"
+
+      - name: reward_hack_detector on sample
+        run: python3 reward_hack_detector.py EXAMPLES/sample_1x4_pr_review.jsonl || echo "expected non-zero on illustrative sample"

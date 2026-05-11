@@ -44,3 +44,5 @@ Contact: `<pre-publish: HN handle or email>`. I'll be in the thread the next 6 h
 - [ ] No specific client names
 - [ ] No specific retainer dollar figures (initial pilot was $750 — historical context only if asked)
 - [ ] "Pay me when things inevitably go wrong" framing intact (operator's exact words)
+
+**Backup mirror** (in case GitHub is rate-limiting): https://codeberg.org/ttaogaming/obsidian-spider-quickstart

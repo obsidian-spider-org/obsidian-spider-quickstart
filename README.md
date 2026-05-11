@@ -142,6 +142,16 @@ python3 mcp/wave_runner_server.py --test
 
 ---
 
+
+---
+
+## Mirrors
+
+- **GitHub (primary)**: https://github.com/obsidian-spider-org/obsidian-spider-quickstart
+- **Codeberg (backup)**: https://codeberg.org/ttaogaming/obsidian-spider-quickstart
+
+Both mirrors track `main`. CI runs on GitHub via `.github/workflows/test.yml` (smoke: `run_wave.py --test`).
+
 ## Built by
 
 **Dev**: Obsidian_Spider — 16 months building large LLM swarms; specializes in red-team audit of multi-tier cost-aware orchestration.
