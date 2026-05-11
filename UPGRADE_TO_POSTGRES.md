@@ -74,36 +74,29 @@ services:
       XTDB_POSTGRES_DB: xtdb_mirror
 ```
 
-Put `PG_USER`, `PG_PASSWORD`, and `CHAIN_HMAC_KEY` in `.env`. Then apply migrations in order:
+Put `PG_USER`, `PG_PASSWORD`, and `CHAIN_HMAC_KEY` in `.env`. Then create the schema — Section 4 below sketches the seven steps in order; a senior engineer with the architecture overview in Section 2 can author the SQL directly, and the polished migration package is part of the T5 Hardening Sprint engagement in `GIFT_AND_OFFER.md` (it includes Phase B role-demotion steps that need operator-attended review and are not safe to ship as paste-this-and-run).
 
-```bash
-for m in 001 002 003 004 005 006 007; do
-  docker exec -i fanout_postgres psql -U $PG_USER -d fanout_chain \
-    < migrations/${m}_*.sql
-done
-```
-
-All migrations are idempotent (`IF NOT EXISTS`, `OR REPLACE`). Safe to re-run.
+The migrations should be written as idempotent (`IF NOT EXISTS`, `OR REPLACE`) so they are safe to re-run.
 
 ---
 
-## 4. Mandatory migrations
+## 4. Schema sketch — the seven steps
 
-Files in the `migrations/` directory of this repo.
+The schema migrates in seven ordered steps. The polished SQL is operator-internal (see Section 9); this sketch is enough for a senior engineer to author the migrations directly.
 
-**001 — Initial schema** (`001_initial_schema.sql`). Creates `chain` with HMAC-link columns (`prev_sha16`, `this_sha16`), 8-value opcode verb CHECK constraint, and JSONB evidence field. Also creates `agents`, `vendor_telemetry`, `vendor_posterior`, and `passages_cache`; seeds example agent rows and vendor priors.
+**Step 1 — Initial schema**. Create `chain` with HMAC-link columns (`prev_sha16`, `this_sha16`), 8-value opcode-verb CHECK constraint, and JSONB evidence field. Also create `agents`, `vendor_telemetry`, `vendor_posterior`, and `passages_cache`; seed example agent rows and vendor priors.
 
-**002 — HMAC trigger** (`002_chain_hmac_trigger.sql`). Installs `pgcrypto`, defines `chain_compute_hmac()` over a unit-separator (`0x1F`) canonical payload, and attaches `chain_hmac_enforce` as a `BEFORE INSERT FOR EACH ROW` trigger. Rejects any `this_sha16` not matching the server-computed HMAC. Tail-row `FOR UPDATE` lock prevents concurrent writers from forking the chain.
+**Step 2 — HMAC trigger**. Install `pgcrypto`. Define a `chain_compute_hmac()` function over a unit-separator (`0x1F`) canonical payload. Attach it as a `BEFORE INSERT FOR EACH ROW` trigger on `chain` that rejects any `this_sha16` not matching the server-computed HMAC. The trigger also takes a tail-row `FOR UPDATE` lock before reading prev-hash, serializing concurrent writers so the chain cannot fork.
 
-**003 — Mode column** (`003_chain_mode_column.sql`). Adds `mode` with a 10-value CHECK enum (`narrative-spec`, `task-completion`, `boring-engineering`, etc.). Updates the HMAC function to include `mode` in the canonical payload. Lying about mode now breaks the chain — mode is cryptographically attested.
+**Step 3 — Mode column**. Add `mode` with a 10-value CHECK enum (`narrative-spec`, `task-completion`, `boring-engineering`, etc.). Update the HMAC function to include `mode` in the canonical payload. Lying about mode now breaks the chain — mode is cryptographically attested.
 
-**004 — Append-only enforcement** (`004_chain_append_only.sql`). Installs `BEFORE UPDATE`, `BEFORE DELETE`, and `BEFORE TRUNCATE` triggers that raise `CHAIN_APPEND_ONLY_VIOLATION` for anyone not holding the `chain_maintenance` role with the maintenance session variable set. Revokes UPDATE, DELETE, TRUNCATE on `chain` from the default `app` role.
+**Step 4 — Append-only enforcement**. Install `BEFORE UPDATE`, `BEFORE DELETE`, and `BEFORE TRUNCATE` triggers that raise `CHAIN_APPEND_ONLY_VIOLATION` for anyone not holding the `chain_maintenance` role with the maintenance session variable set. Revoke UPDATE, DELETE, TRUNCATE on `chain` from the default `app` role.
 
-**005 — Semantic dedup** (`005_chain_semantic_dedup.sql`). Adds `content_digest` as a `GENERATED ALWAYS AS STORED` column (SHA-256 over semantic fields, 16-hex) with a UNIQUE index. Two processes generating identical content will have the second INSERT rejected at the database layer.
+**Step 5 — Semantic dedup**. Add `content_digest` as a `GENERATED ALWAYS AS STORED` column (SHA-256 over semantic fields, 16-hex) with a UNIQUE index. Two processes generating identical content have the second INSERT rejected at the database layer.
 
-**006 — Chain outbox** (`006_chain_outbox.sql`). Creates `chain_outbox` with a foreign key to `chain.seq`. An `AFTER INSERT` trigger on `chain` enqueues a row atomically in the same transaction. A partial index on `processed_at IS NULL` makes the bridge drain query efficient. Backfills existing chain rows on first run.
+**Step 6 — Chain outbox**. Create `chain_outbox` with a foreign key to `chain.seq`. Attach an `AFTER INSERT` trigger on `chain` that enqueues a row atomically in the same transaction. A partial index on `processed_at IS NULL` keeps the bridge drain query efficient. Backfill existing chain rows on first run.
 
-**007 — Role separation** (`007_role_separation.sql`). Creates `chain_owner` (DDL principal; no login), `bridge_role` (drain outbox only; cannot INSERT into chain or disable triggers), and `audit_role` (read-only everywhere). Transfers `chain` and `chain_outbox` ownership to `chain_owner`. **Phase B** (manual operator step): create a `pg_admin` superuser, then demote `app` to `NOSUPERUSER`. After Phase B, `bridge_role` cannot disable the HMAC trigger because it does not own the table.
+**Step 7 — Role separation**. Create `chain_owner` (DDL principal; no login), `bridge_role` (drain outbox only; cannot INSERT into chain or disable triggers), and `audit_role` (read-only everywhere). Transfer `chain` and `chain_outbox` ownership to `chain_owner`. **Phase B** (operator-attended): create a `pg_admin` superuser, then demote `app` to `NOSUPERUSER`. After Phase B, `bridge_role` cannot disable the HMAC trigger because it does not own the table.
 
 ---
 
@@ -143,34 +136,23 @@ psql -h localhost -U $PG_USER -d fanout_chain -c "SELECT count(*) FROM chain;"
 # All rows verify — exits 0 on clean chain
 python3 hmac_verifier.py
 
-# Postgres ↔ XTDB consistent
-python3 chain_tamper_detect.py --once
-
 # UPDATE blocked — expect CHAIN_APPEND_ONLY_VIOLATION
 psql -h localhost -U $PG_USER -d fanout_chain \
   -c "UPDATE chain SET claim = 'tampered' WHERE seq = 1;"
 ```
 
-If the fourth command does not raise the error, migration 004 did not apply or the maintenance session variable is set. Check with `SHOW app.chain_append_only_maintenance;`.
+If the third command does not raise the error, step 4 did not apply or the maintenance session variable is set. Check with `SHOW app.chain_append_only_maintenance;`. Postgres ↔ XTDB consistency-watch is a separate tamper-detection daemon; the operator-internal reference implementation runs it as a cron, and the polished script is part of the T5 Hardening Sprint engagement.
 
 ---
 
 ## 9. The reference implementation
 
-These are the actual files the operator runs:
+The polished migrations + Phase B role-demotion runbook + tamper-detection daemon are part of the T5 Hardening Sprint engagement in `GIFT_AND_OFFER.md`. They aren't shipped here because:
 
-```
-migrations/
-  001_initial_schema.sql
-  002_chain_hmac_trigger.sql
-  003_chain_mode_column.sql
-  004_chain_append_only.sql
-  005_chain_semantic_dedup.sql
-  006_chain_outbox.sql
-  007_role_separation.sql
-```
+- Phase B involves operator-attended role-demotion review (`app` to `NOSUPERUSER`); a paste-this-and-run script that ships these steps would be irresponsible without context-aware review of your existing Postgres roles.
+- The tamper-detection daemon depends on operator-internal CI plumbing that doesn't generalize cleanly to "everyone's setup."
 
-Not a proposed architecture — what the reference implementation runs.
+This isn't a proposed architecture — it's what the reference implementation runs internally. The sketch in Section 4 is enough for a senior engineer to author their own version. If you want the polished, operator-attended implementation applied to your stack: T5 Hardening Sprint is the engagement (scope-locked, fixed-bid).
 
 ---
 

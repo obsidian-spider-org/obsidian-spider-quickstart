@@ -159,7 +159,7 @@ def check_l_workslop_loc_overclaim(row: dict, row_text: str) -> str | None:
 
 
 def check_l_vacuous_sweep(row: dict, row_text: str) -> str | None:
-    if not ZERO_BONDSWOMAN.search(row_text):
+    if not ZERO_SWEEP_CLAIM.search(row_text):
         return None
     file_ref = row.get("file") or row.get("file_path")
     if not file_ref:
@@ -289,13 +289,13 @@ def run_tests() -> None:
 
 def _bondswoman_self_check() -> None:
     src = open(__file__, encoding="utf-8").read().lower()
-    hits = [p for p in BONDSWOMAN_SET if p in src]
+    hits = [p for p in SYCOPHANTIC_PHRASES if p in src]
     # The set definitions themselves contain these strings; strip source of set block
     # We only flag occurrences outside the definition block (in output strings)
     output_strings = [
         "consensus reached", "bft-attested", "quorum met",
     ]
-    bad = [p for p in BONDSWOMAN_SET if src.count(p) > 1]
+    bad = [p for p in SYCOPHANTIC_PHRASES if src.count(p) > 1]
     if bad:
         print(f"WARNING: bondswoman phrases found in output paths: {bad}", file=sys.stderr)
 
@@ -315,7 +315,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if args.lokis:
-        for name, desc in LOKIS:
+        for name, desc in PATTERNS:
             print(f"{name}: {desc}")
         sys.exit(0)
 

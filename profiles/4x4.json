@@ -1,5 +1,5 @@
 {
-  "name": "standard_4x4",
+  "name": "4x4",
   "description": "4 waves x 4 agents = 16 agent slots. Recommended starting point for real review work. Wave 1 frames the target (4 perspectives). Wave 2 proposes improvements. Wave 3 red-teams. Wave 4 votes and summarizes. SPIN-style critique cycle: Situation → Problem → Implication → Need-payoff.",
   "waves": 4,
   "agents_per_wave": 4,

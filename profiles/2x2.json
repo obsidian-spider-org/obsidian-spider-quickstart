@@ -1,5 +1,5 @@
 {
-  "name": "simple_trio",
+  "name": "2x2",
   "description": "Orchestrator + Proposer + Critic + Synthesizer — 4 agents across 2 waves. Default profile. Free-tier models, no Postgres or XTDB required. Typical runtime under 30 seconds.",
   "waves": 2,
   "agents_per_wave": 2,

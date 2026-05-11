@@ -1,20 +1,34 @@
 ---
 title: "Capacity Ladder & Upgrade Paths"
+date: 2026-05-11
 confidence: "7/8 (no quorum certificate)"
 ---
 
 # Capacity Ladder & Upgrade Paths
 
-You started with `2x4` (8 agents) from QUICKSTART. This doc shows what to do when you outgrow it.
+You started with `2x2` (4 subagents) from QUICKSTART. This doc shows what to do when you outgrow it.
 
 The ladder is **progressive disclosure** — pick the rung that matches your project scope today; climb when you actually hit the limit, not before.
+
+**Multi-platform.** The capacity ladder applies on any parent-launches-subagents substrate: GitHub Copilot Pro+ (current pricing window), free vendor mesh (OpenRouter / Groq / Together / Cerebras with backoff/retry), Claude Code's Agent tool, and anywhere else a parent agent can launch subagents. Numbers below reflect my workflow on Copilot Pro+ specifically; the rung-shapes are the same elsewhere, only the per-call cost-basis changes.
+
+### Operator's actual workflow numbers
+
+| Mode | Topology | Tool calls per subagent | Parent-call cost |
+|---|---|---|---|
+| Max-burn (intentionally blows quota) | 11x8 (88 subagents) all-frontier Claude Opus 4.7 | 10-40 each | high (Claude Max session limit, by design) |
+| Normal workflow | 4x8 (32 subagents) multi-tier routing | 10-40 each | varies by model mix |
+| Copilot GPT-5.5 example | 1 parent → ~40 subagents | 10-40 each | ~$0.30 per parent call (7.5x premium-request multiplier x $0.04 overage) |
+| Recommended start (you) | 4x4 (16 subagents) | per-task default | depends on plan |
+
+Most projects stay at the recommended start. The 11x8 max-burn is my personal upper bound and it blows the weekly Claude Max session limit on purpose — it's a stress test, not a recipe.
 
 ---
 
 ## Where you are now (Rung 0)
 
 ```
-2x4 wave  →  JSONL audit trail  →  hmac_verifier  +  reward_hack_detector
+2x2 wave  →  JSONL audit trail  →  hmac_verifier  +  reward_hack_detector
 ```
 
 You get: signed per-agent receipts, tamper-evident chain, basic reward-hack catches. **Cost: free-tier or fixed-sub.**
@@ -147,7 +161,7 @@ You don't have to commit. Each option is independently installable + reversible.
 
 ## When you hit problems
 
-If you scale this and hit a class of failure the helper scripts don't catch — patterns like cross-wave confabulation, role-collusion, citation-fabrication that survives the regex audit — those are 16 months of scar tissue away. I've documented some; you can rediscover them yourself over the next ~6-12 months, or open a GitHub issue and ask. Free guidance for genuine open-source users.
+If you scale this and hit a class of failure the helper scripts don't catch — patterns like cross-wave confabulation, role-collusion, or citation-fabrication that survives the regex audit — those typically only surface at sustained scale. I've documented some over the past 16 months; you can rediscover them yourself over the next ~6-12 months, or open a GitHub issue and ask. Free guidance for genuine open-source users.
 
 Accelerated consulting (paid red-team audit) is available — see `GIFT_AND_OFFER.md`.
 

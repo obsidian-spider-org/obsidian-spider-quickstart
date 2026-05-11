@@ -28,13 +28,13 @@ Stdlib + requests only. No Postgres, XTDB, or Docker required.
 Quickstart:
     pip install requests
     export OPENROUTER_API_KEY=sk-or-...
-    python3 run_wave.py --config simple_trio --target "path/to/file_or_text"
+    python3 run_wave.py --config 2x2 --target "path/to/file_or_text"
 
 Run inline tests:
     python3 run_wave.py --test
 
 Dry run (no API calls):
-    python3 run_wave.py --config simple_trio --dry-run --target "demo text"
+    python3 run_wave.py --config 2x2 --dry-run --target "demo text"
 
 Vendor env keys:
     OPENROUTER_API_KEY    → openrouter (default; many free models)
@@ -562,34 +562,34 @@ def run_tests() -> None:
 
     print("Running inline tests...")
 
-    # Test 1: simple_trio profile loads cleanly
+    # Test 1: 2x2 profile loads cleanly
     try:
-        p = load_profile("simple_trio")
+        p = load_profile("2x2")
         assert "agents" in p, "no 'agents' key"
         assert len(p["agents"]) > 0, "empty agents list"
-        ok("Test 1: simple_trio loads")
+        ok("Test 1: 2x2 loads")
     except Exception as e:
-        fail(f"Test 1: simple_trio load failed: {e}")
+        fail(f"Test 1: 2x2 load failed: {e}")
 
-    # Test 2: standard_4x4 has 4 waves x 4 agents = 16 expected slots
+    # Test 2: 4x4 has 4 waves x 4 agents = 16 expected slots
     try:
-        p = load_profile("standard_4x4")
+        p = load_profile("4x4")
         assert p["waves"] == 4, f"expected 4 waves, got {p['waves']}"
         assert p["agents_per_wave"] == 4, f"expected 4 apw, got {p['agents_per_wave']}"
         total = sum(len(agents_for_wave(p, w)) for w in range(1, p["waves"] + 1))
         assert total == 16, f"expected 16 slots, got {total}"
-        ok("Test 2: standard_4x4 → 4x4 = 16 slots")
+        ok("Test 2: 4x4 → 4x4 = 16 slots")
     except Exception as e:
-        fail(f"Test 2: standard_4x4 failed: {e}")
+        fail(f"Test 2: 4x4 failed: {e}")
 
     # Test 3: hfo_full_8x8 has 8 waves x 8 agents = 64 expected slots
     try:
-        p = load_profile("defense_in_depth_8x8")
+        p = load_profile("8x8")
         assert p["waves"] == 8, f"expected 8 waves, got {p['waves']}"
         assert p["agents_per_wave"] == 8, f"expected 8 apw, got {p['agents_per_wave']}"
         total = sum(len(agents_for_wave(p, w)) for w in range(1, p["waves"] + 1))
         assert total == 64, f"expected 64 slots, got {total}"
-        ok("Test 3: defense_in_depth_8x8 → 8x8 = 64 slots")
+        ok("Test 3: 8x8 → 8x8 = 64 slots")
     except Exception as e:
         fail(f"Test 3: hfo_full_8x8 failed: {e}")
 
@@ -629,7 +629,7 @@ def run_tests() -> None:
         buf = io.StringIO()
         with redirect_stdout(buf):
             result = run(
-                profile_name="simple_trio",
+                profile_name="2x2",
                 target="demo text for dry run",
                 out_path="/tmp/run_wave_test_dryrun.jsonl",
                 vendor="openrouter",
@@ -640,7 +640,7 @@ def run_tests() -> None:
             )
         output = buf.getvalue()
         assert result["dry_run"] is True, "dry_run flag not set"
-        # simple_trio: 2 waves x 2 agents = 4 slots
+        # 2x2: 2 waves x 2 agents = 4 slots
         assert result["total_slots"] == 4, f"expected 4 slots, got {result['total_slots']}"
         assert "Wave 1/2" in output, "wave plan not in output"
         assert "orchestrator" in output, "orchestrator not in output"
@@ -664,7 +664,7 @@ def run_tests() -> None:
 # ---------------------------------------------------------------------------
 # SELF-REDTEAM (minute-6 edge cases for new users):
 #
-# 1. Free-tier rate limits — OpenRouter free models cap ~20 req/min. standard_4x4
+# 1. Free-tier rate limits — OpenRouter free models cap ~20 req/min. 4x4
 #    (16 calls) will likely hit the cap mid-run. Fix: set SIGRUN_REQUEST_DELAY_MS=3000
 #    (3s gap), or use groq which has a more generous free tier.
 #
@@ -686,7 +686,7 @@ def run_tests() -> None:
 # 5. Sycophantic agent cascade — Wave 2+ agents receive all prior receipts. If wave-1
 #    agents anchor on a wrong claim, later agents tend to converge on it. The critic
 #    role is designed to break this, but it can still collapse. Mitigation: use the
-#    --config standard_4x4 proposer-D (contrarian proposer) role explicitly.
+#    --config 4x4 proposer-D (contrarian proposer) role explicitly.
 #
 # 6. Vendor API key exposure in logs — run_wave.py never prints API keys, but
 #    shell history, CI logs, and 'ps aux' output can expose env vars. Use a dedicated
@@ -702,13 +702,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
             "run_wave.py — 10-minute thin-slice multi-agent review driver.\n"
-            "Quickstart: python3 run_wave.py --config simple_trio --target myfile.py"
+            "Quickstart: python3 run_wave.py --config 2x2 --target myfile.py"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--config", default="simple_trio",
-        help="Profile name (loads profiles/<name>.json). Default: simple_trio",
+        "--config", default="2x2",
+        help="Profile name (loads profiles/<name>.json). Default: 2x2",
     )
     parser.add_argument(
         "--target", default="",

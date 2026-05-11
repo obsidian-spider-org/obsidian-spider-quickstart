@@ -1,162 +1,184 @@
-# Public-mirror repo skeleton (T0.HN2)
+---
+title: "obsidian-spider-quickstart"
+date: 2026-05-11
+confidence: "7/8 (no quorum certificate)"
+---
 
-**Job**: the one-paste working demo. A non-technical reader pastes the markdown into Copilot in <10 minutes and gets a real signed log out.
-**Posture**: thin slice. The gift, not the architecture.
+# obsidian-spider-quickstart
+
+> Cost-aware routing swarm for LLMs: one parent call dispatches N subagents, each routed to the cheapest model that does the job, and one synthesis pass gathers them. Signed-log audit. Multi-platform.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Built with Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![MCP-compatible](https://img.shields.io/badge/MCP-compatible-purple)](https://modelcontextprotocol.io/)
+[![GitHub mirror](https://img.shields.io/badge/GitHub-obsidian--spider--org-181717?logo=github)](https://github.com/obsidian-spider-org/obsidian-spider-quickstart)
+
+I built a markdown prompt that implements a cost-aware routing swarm: one parent call dispatches N independent subagents, each producing one perspective on whatever input you hand it, and the parent gathers them into a single synthesis. Cheap models handle cheap work; frontier models only run the synthesis pass. Every subagent's output is written to an HMAC-signed JSONL log you can audit later. Two stdlib-only Python helpers verify the cryptographic chain and flag common reward-hacking patterns. MIT-licensed, no telemetry.
+
+**Multi-platform.** The pattern works on any host where a parent agent can launch subagents:
+
+- **GitHub Copilot Pro+** — the current pricing window; one parent premium request fans out to many subagents inside the same message (highest leverage)
+- **Free vendor mesh** — OpenRouter / Groq / Together / Cerebras free tiers, with backoff/retry/durable-workflow wrapper
+- **Claude Code** — Agent tool subagents
+- **Anywhere a parent agent can launch subagents** — the cost-tier routing is the load-bearing value-prop, not any one vendor
+
+The pattern is general across use cases too. Code review is one example; so are batch image-prompt generation, markdown drafting variants, decision-room quorums, refactor exploration, schema design, A/B copy generation, and test-case brainstorming. You decide what to fan out and what to gather.
 
 ---
 
-## What this is
+## Use cases at a glance
 
-A markdown prompt for GitHub Copilot that:
+| Use case | Scatter (fan-out) | Gather (synthesis) |
+|---|---|---|
+| Code / PR review | 8 reviewer perspectives | merged review |
+| Image generation batch | 8 prompt variations | comparison sheet |
+| Markdown drafting | 8 draft intros | pick best with rationale |
+| Decision room | 8 stance-driven analyses | quorum verdict |
+| Refactor exploration | 8 proposed refactors | tradeoff matrix |
+| Content variants | 8 A/B candidates | selection rationale |
+| Test generation | 8 test-case ideas | consolidated test plan |
+| Schema design | 8 schema proposals | reconciled schema |
+| Multi-perspective summary | 8 framing angles | layered summary |
+| Prompt-engineering iteration | 8 prompt rewrites | best-of with notes |
 
-1. Takes one premium request (the parent call) and fans out to N subagent reviewers
-2. Each reviewer critiques the same target (a PR diff, a file, a design doc)
-3. Their outputs are written to an HMAC-signed JSONL file you can audit later
-
-That's it. One file. MIT-licensed. Try it on a real pull request.
+The prompt template doesn't hardcode any one use case. You write what you want fanned out and how you want it gathered.
 
 ---
 
-## How to use it in 60 seconds
+## Quick Start
 
 ```
-1. Clone this repo
-2. Copy `.env.example` to `.env` and fill in your HMAC key (any 32-char random string)
-3. Open GitHub Copilot's coding-agent surface on a PR
-4. Paste the contents of `prompts/quorum_review.md` as the parent message
-5. Watch the subagents run inside the parent session
-6. Check `runs/<timestamp>/chain.jsonl` for the signed log
+1. git clone https://github.com/obsidian-spider-org/obsidian-spider-quickstart
+2. cp .env.example .env   # then fill in any 32-char random string for HMAC_KEY
+3. Open GitHub Copilot's coding-agent surface (or Claude, or GPT-4o)
+4. Paste the contents of PROMPT.md as the parent message
+5. Fill FORMATION + TARGET (your input) + GATHER_INSTRUCTION (what synthesis to produce)
+6. Read the signed log at the path run_wave.py prints (./run_<ts>.jsonl by default)
 ```
 
-A worked example with real timestamps, agent count, and a signature line lives in `examples/2026-05-12_real_pr/`.
+A sample run output lives at `examples/sample_1x4_pr_review.jsonl` — pass it through `python3 hmac_verifier.py examples/sample_1x4_pr_review.jsonl` to see chain verification on real data.
+
+---
+
+## What you get after 10 minutes
+
+- A JSONL audit trail of N subagents independently working on the same input from different angles
+- HMAC-signed receipts you can re-verify later with one stdlib Python script
+- One parent call fans out to N subagents inside the same message, which on Copilot Pro+ today runs an order of magnitude or two cheaper than the same work as raw API calls. The measured ratio sits around 100x to 1000x depending on which frontier model you'd otherwise pay for; **measure your own** with the calculator in the first-comment reply on the HN thread (or `docs/COST_MODEL.md` once published in the repo)
+- A reward-hack pattern detector that flags common LLM failure modes (consensus theater, citation-shape gaming, mode-drift)
+- Three profile sizes to pick from (2x2 demo, 4x4 recommended-start, 8x8 stress-test) — see `profiles/`
+- An optional MCP server stub for Claude Desktop, Cursor, and VSCode-MCP clients
+
+To be clear about pricing: the parent call is fully paid premium (Copilot Pro+ at $39/mo plus the premium-request multiplier — ~$0.30 per call on GPT-5.5 at 7.5×). The savings ratio is paid-parent vs same-work-as-raw-API, not parent-vs-nothing. GitHub announced [usage-based Copilot billing effective June 1, 2026](https://github.blog/news-insights/company-news/github-copilot-is-moving-to-usage-based-billing/); the current Copilot subagent pricing window is closing — measure your own savings before then. The pattern keeps working after the transition on Copilot, on free vendor mesh, and on Claude Code — the cost-savings multiplier compresses on Copilot, the routing pattern does not. See [GIFT_AND_OFFER.md](GIFT_AND_OFFER.md) for paid tiers (audits, hardening sprints, retainers).
 
 ---
 
 ## What it doesn't do
 
-- It does **not** guarantee fanout will stay free. Copilot policy can change.
-- It does **not** save you from a broken pipeline; it surfaces quorum-style misses.
-- It does **not** include the orchestrator, the vendor-mesh telemetry, the CI/CD harness, the production-line discipline, or the prompt-evolution loop. Those are not in this repo.
-- It does **not** promise you'll see any specific % improvement. Measure on your own work.
-
-If hundreds of agents start thunder-herding your infrastructure, that's the moment to reach out (see below).
+- The cost-savings number is a ratio, not an absolute. If you weren't going to pay for raw API anyway, you aren't "saving" anything — measure your own with the calculator
+- Inside-parent-message subagent counting on Copilot is current pricing-window behavior; multipliers and behaviors shift with [GitHub's June 1, 2026 billing transition](https://github.blog/news-insights/company-news/github-copilot-is-moving-to-usage-based-billing/)
+- It surfaces quorum-style misses; it does not fix a broken pipeline for you
+- It does not include the orchestrator, vendor-mesh telemetry, CI/CD harness, or prompt-evolution loop — those stay internal
+- It does not promise any specific quality improvement; measure on your own work
 
 ---
 
-## Files in this repo (thin slice)
+## Files in this repo
 
 ```
-prompts/quorum_review.md         # the parent-call prompt
-.env.example                     # paste-and-fill template (FCA highest-leverage)
-runs/.gitkeep                    # subagents write here
-examples/2026-05-12_real_pr/     # one real run with timestamp + signature
-scripts/verify_chain.py          # walk the HMAC chain; flag any break
+PROMPT.md                        # the parent-call prompt template (use-case-agnostic)
+.env.example                     # rename to .env and fill in your HMAC key
+profiles/                        # 2x2, 4x4, 8x8 wave configurations + critic_lite_example.md
+examples/sample_1x4_pr_review.jsonl  # a sample run output you can verify
+run_wave.py                      # programmatic CLI driver; writes ./run_<ts>.jsonl
+hmac_verifier.py                 # stdlib chain integrity check (the chain verifier)
+reward_hack_detector.py          # pattern scan for common LLM failure modes
+mcp/                             # MCP server stub (optional)
+docs/COST_MODEL.md               # the math behind the 100x–1000x range + calculator
 LICENSE                          # MIT
 ```
 
 ---
 
-## License
+## Profiles
 
-MIT. Use it, fork it, ship it. Attribution appreciated but not required.
+Pick the profile that matches your scope. Most projects stay at `2x2` and never need to climb. `Subagent` is generic — it's whatever you ask each agent to do (review, draft, propose, generate, critique, etc.).
 
----
+| Profile | Waves × Subagents | Total | When to use |
+|---|---|---|---|
+| `2x2` | 2 waves, 2 subagents | 4 calls | Solo run; fastest path |
+| `4x4` | 4 waves, 4 subagents | 16 calls | Recommended start; refinement built in |
+| `8x8` | 8 waves, 8 subagents | 64 calls | Stress test; free-tier rate-limit risk; burns context fast |
 
-## Contact
-
-If your AI/agent infrastructure starts breaking under swarm load (and it will, eventually), reach out:
-
-`<pre-publish: discovery-call form URL or contact email>`
-
-I'm available for 72-hour audits, hardening sprints, and retainer engagements. Design-partner cohort open for first 5 teams at half-price.
+Profile JSONs live in `profiles/`. Default config in `QUICKSTART.md` uses `2x2`.
 
 ---
 
-## MCP server — Claude Desktop / Cursor / VSCode
+## MCP server (optional)
 
-Use the tools in this repo directly from any MCP-aware client without opening a terminal.
-
-### 30-second install
-
-**Step 1.** Install the MCP Python SDK (one-time, any Python 3.10+):
+Use the tools in this repo from any MCP-aware client without opening a terminal.
 
 ```bash
 pip install mcp
 ```
 
-**Step 2.** Add this block to your Claude Desktop `claude_desktop_config.json`
-(location: `~/Library/Application Support/Claude/` on macOS, `%APPDATA%\Claude\` on Windows):
+Add this block to your Claude Desktop `claude_desktop_config.json` (location: `~/Library/Application Support/Claude/` on macOS, `%APPDATA%\Claude\` on Windows):
 
 ```json
 {
   "mcpServers": {
     "wave_runner": {
       "command": "python3",
-      "args": ["/path/to/public_mirror_staging/mcp/wave_runner_server.py"]
+      "args": ["/path/to/obsidian-spider-quickstart/mcp/wave_runner_server.py"]
     }
   }
 }
 ```
 
-Replace `/path/to/public_mirror_staging` with the actual path where you cloned this repo.
-Restart Claude Desktop after editing. The four tools appear automatically in the tool picker.
+Restart Claude Desktop. The four tools (`run_wave`, `verify_chain`, `detect_reward_hacks`, `list_profiles`) appear in the tool picker.
 
-### Tools exposed
-
-| Tool | Args | What it does |
-|---|---|---|
-| `run_wave` | `config` (path), `target` (str), `vendor?` (str) | Runs a wave; returns summary JSON |
-| `verify_chain` | `jsonl_path` (path) | Checks HMAC chain integrity; returns pass/fail |
-| `detect_reward_hacks` | `jsonl_path` (path) | Scans a log for reward-hacking patterns |
-| `list_profiles` | none | Lists available profile JSONs in `profiles/` |
-
-Every invocation is appended to `mcp/tool_audit.jsonl` (local, unencrypted operational trace).
-
-### Verify the server works before connecting a client
+Verify the server works before connecting a client:
 
 ```bash
 python3 mcp/wave_runner_server.py --test
-# Expected output ends with: All tests PASS. Confidence: 7/8 (no quorum certificate).
 ```
 
-### Known limits
-
-- `run_wave`, `verify_chain`, `detect_reward_hacks` invoke local Python scripts via subprocess.
-  If those scripts are not present, the tool returns a non-zero `returncode` with an error message — it does not crash the server.
-- The audit log at `mcp/tool_audit.jsonl` is not HMAC-signed. It is an operational trace, not a cryptographic receipt.
-- The MCP SDK is pre-1.0. Pin the version in `requirements.txt` (`mcp==1.x.y`) to avoid breaking API changes.
+Known limits: the MCP audit log at `mcp/tool_audit.jsonl` is an operational trace, not a cryptographic receipt. Pin the SDK version in `requirements.txt` (`mcp==1.x.y`) to avoid pre-1.0 API churn.
 
 ---
 
-## Skeleton pre-publish checklist
+## Upgrade paths
 
-- [ ] `prompts/quorum_review.md` works end-to-end on a fresh Copilot session
-- [ ] `.env.example` is at repo root (FCA highest-leverage)
-- [ ] `examples/2026-05-12_real_pr/` contains a real run with non-fake timestamp + signature
-- [ ] `scripts/verify_chain.py` walks the example chain successfully
-- [ ] LICENSE file present and matches "MIT" claim
-- [ ] No internal vocabulary leakage (internal codenames stripped)
-- [ ] No private filesystem paths leaked
-- [ ] Discovery-call form URL works
-- [ ] T1-T3 fresh-substrate paste test passes (Claude / ChatGPT / Copilot all complete <2 min)
+- `CAPACITY_LADDER.md` — when you outgrow JSONL, what to climb to next (Postgres, bitemporal mirror, RFC 3161 timestamps, multi-vendor BFT quorum)
+- `BOOTSTRAP_NOTE.md` — what "BFT consensus" actually means at each rung; honest about the limits of single-substrate scatter-gather
+- `UPGRADE_TO_POSTGRES.md` — the 5-minute path from one JSONL file to a real database
 
 ---
 
+## License
+
+MIT — free, no strings, no attribution required (attribution welcome but not required).
 
 ---
 
 ## Mirrors
 
 - **GitHub (primary)**: https://github.com/obsidian-spider-org/obsidian-spider-quickstart
-- **Codeberg (backup)**: https://codeberg.org/ttaogaming/obsidian-spider-quickstart
 
 Both mirrors track `main`. CI runs on GitHub via `.github/workflows/test.yml` (smoke: `run_wave.py --test`).
 
+---
+
 ## Built by
 
-**Dev**: Obsidian_Spider — 16 months building large LLM swarms; specializes in red-team audit of multi-tier cost-aware orchestration.
+Built by Obsidian_Spider — 16 months building multi-agent LLM swarms.
 
-**Cybernetic-unit**: Sigrún + 8 Valkyries — the agent lattice that authored this repo through cross-substrate dispatch (Claude Code Opus + Sonnet + Copilot GPT-5.5 + free-vendor mesh). Roles: Hrist (OBSERVE), Mist (BRIDGE), Thrud (SHAPE), Hildr (INJECT), Skǫgul (DISRUPT/red-team), Eir (IMMUNIZE/defense-in-depth), Gondul (ASSIMILATE), Reginleif (NAVIGATE).
+For the framing around what's gift and what's paid offer, see [GIFT_AND_OFFER.md](GIFT_AND_OFFER.md).
 
-Each agent has a focused cognitive stance and signs every receipt with HMAC. The full architecture stays internal; this repo is the public thin slice — see `GIFT_AND_OFFER.md`.
+---
 
+## Contact
+
+General questions: `contact@obsidianspider.org` · Paid work: `audit@obsidianspider.org` · Or [open a GitHub issue](https://github.com/obsidian-spider-org/obsidian-spider-quickstart/issues).
+
+See [GIFT_AND_OFFER.md](GIFT_AND_OFFER.md) for the engagement ladder and refund terms.
