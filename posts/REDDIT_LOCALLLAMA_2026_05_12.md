@@ -39,7 +39,7 @@ If you're already running an agent harness, the bones of this are mostly free, b
 - **Claude Code**: Agent tool subagents
 - **Self-hosted Llama-3.x / MLX / vLLM**: anywhere a parent agent can launch subagents
 
-Multi-tier cost awareness is the load-bearing value-prop, not any one vendor.
+Multi-tier cost awareness is the part that matters, not any one vendor.
 
 Specifics on the fan-out: each subagent is assigned a role from a rotation (security, logic, style, perf, completeness, consistency, edge-cases, integration), given the diff as TARGET, and constrained to one JSONL line per finding with file:line evidence or a direct quote. The parent collects them, runs a basic reward-hack pattern scan (copy-paste quorum, citation-shape gaming, confidence inflation), and emits a SUMMARIZE receipt at the end.
 
