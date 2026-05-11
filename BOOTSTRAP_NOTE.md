@@ -23,7 +23,7 @@ What bootstrap does NOT give you:
 - ❌ Failure modes that don't transfer across the 8 personae
 - ❌ Real Byzantine fault tolerance against a malicious-or-faulty model
 
-This is **fine for most projects**. Most reviews don't need cryptographic certainty across distinct substrates — they just need more than one perspective.
+This is **fine for most projects**. Most reviews don't need cryptographic certainty across distinct substrates; they just need more than one perspective.
 
 ## The upgrade (Rung 4–5): real free-vendor mesh
 
@@ -62,7 +62,7 @@ To make BFT-attested claims, climb to Rung 4 or 5.
 
 ## What this repo is honest about
 
-The `PROMPT.md` template tells the parent model to "spawn N subagents." On a single-substrate run, those subagents are personae — useful, but not Byzantine-fault-tolerant. The HMAC chain catches *output* tampering; it does NOT make the personae independent.
+The `PROMPT.md` template tells the parent model to "spawn N subagents." On a single-substrate run, those subagents are personae: useful, but not Byzantine-fault-tolerant. The HMAC chain catches *output* tampering; it does NOT make the personae independent.
 
 The `confidence: "7/8 (no quorum certificate)"` cap on every receipt reflects this: a real 8/8 quorum certificate requires multi-substrate attestation (Option D in `CAPACITY_LADDER.md`). I designed bootstrap reasoning to max out at 7/8 by design.
 

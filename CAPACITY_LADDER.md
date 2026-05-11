@@ -21,7 +21,7 @@ The ladder is **progressive disclosure** — pick the rung that matches your pro
 | Copilot GPT-5.5 example | 1 parent → ~40 subagents | 10-40 each | ~$0.30 per parent call (7.5x premium-request multiplier x $0.04 overage) |
 | Recommended start (you) | 4x4 (16 subagents) | per-task default | depends on plan |
 
-Most projects stay at the recommended start. The 11x8 max-burn is my personal upper bound and it blows the weekly Claude Max session limit on purpose — it's a stress test, not a recipe.
+Most projects stay at the recommended start. The 11x8 max-burn is my personal upper bound and it blows the weekly Claude Max session limit on purpose. It's a stress test, not a recipe.
 
 ---
 
@@ -161,9 +161,9 @@ You don't have to commit. Each option is independently installable + reversible.
 
 ## When you hit problems
 
-If you scale this and hit a class of failure the helper scripts don't catch — patterns like cross-wave confabulation, role-collusion, or citation-fabrication that survives the regex audit — those typically only surface at sustained scale. I've documented some over the past 16 months; you can rediscover them yourself over the next ~6-12 months, or open a GitHub issue and ask. Free guidance for genuine open-source users.
+If you scale this and hit a class of failure the helper scripts don't catch (patterns like cross-wave confabulation, role-collusion, or citation-fabrication that survives the regex audit), those typically only surface at sustained scale. I've documented some over the past 16 months; you can rediscover them yourself over the next ~6-12 months, or open a GitHub issue and ask. Free guidance for genuine open-source users.
 
-Accelerated consulting (paid red-team audit) is available — see `GIFT_AND_OFFER.md`.
+Accelerated consulting (paid red-team audit) is available. See `GIFT_AND_OFFER.md`.
 
 ---
 

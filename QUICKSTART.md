@@ -14,13 +14,13 @@ A JSONL audit trail of N subagents independently processing the same input from 
 - **GitHub Copilot Pro+** — current pricing window; one parent premium request fans out to many subagents inside the same message
 - **Free vendor mesh** — OpenRouter / Groq / Together / Cerebras with backoff/retry/durable-workflow wrapper
 - **Claude Code** — Agent tool subagents
-- **Anywhere a parent agent can launch subagents** — the cost-tier routing is the load-bearing value-prop, not vendor-specific
+- **Anywhere a parent agent can launch subagents** — the cost-tier routing is the part that matters, not vendor-specific
 
 This is a general-purpose scatter-gather: code review is one example; so are batch image-prompt generation, markdown drafting, refactor exploration, decision rooms, schema design, A/B copy, and test-case brainstorming. The prompt template stays the same; only your TARGET and GATHER_INSTRUCTION change.
 
 ### What is cost-aware routing?
 
-One parent call dispatches N subagents inside the same message. Each subagent is routed to the cheapest model that does the job — cheap reasoning tier for "read this file, extract these names, run this small check," and a frontier model only for the final synthesis pass that gathers everything. Multi-tier cost awareness yields much better $/token than running a frontier model on every step; the routing-LLM literature (RouteLLM, Aviary, Mixture of Agents) benchmarks this pattern and finds it consistently better than frontier-on-everything by a comfortable margin. The exact multiplier depends on your task mix and which baseline you're comparing against.
+One parent call dispatches N subagents inside the same message. Each subagent is routed to the cheapest model that does the job: cheap reasoning tier for "read this file, extract these names, run this small check," and a frontier model only for the final gather. Multi-tier cost awareness yields much better $/token than running a frontier model on every step; the routing-LLM literature (RouteLLM, Aviary, Mixture of Agents) benchmarks this pattern and finds it consistently better than frontier-on-everything by a comfortable margin. The exact multiplier depends on your task mix and which baseline you're comparing against.
 
 ---
 
@@ -47,7 +47,7 @@ Open `PROMPT.md` and copy the block that starts with `## ORCHESTRATOR SYSTEM PRO
 
 ## Path A — Minute 2–4: fill in the three slots and send
 
-Open your AI tool of choice — GitHub Copilot agent mode, Claude Projects, a GPT-4o assistant, or any system that accepts a long system prompt. Paste the copied block as the system or first-user message.
+Open your AI tool of choice: GitHub Copilot agent mode, Claude Projects, a GPT-4o assistant, or any system that accepts a long system prompt. Paste the copied block as the system or first-user message.
 
 Fill in the three `FILL_ME` values before sending:
 
@@ -59,9 +59,9 @@ TIER_MIX=all-frontier  # or: multi-tier
 
 `2x4` is the recommended starting point. Wave 1 produces N perspectives. Wave 2 sees Wave 1's output and either disputes, refines, or builds on it. That sequential structure is why you get more signal than a single call.
 
-Send the prompt. The model will spawn subagents internally and stream back JSONL lines — one per subagent, one summary at the end.
+Send the prompt. The model will spawn subagents internally and stream back JSONL lines: one per subagent, one summary at the end.
 
-**No API key required on your end.** The model you pasted into handles the calls. If you want to run this headlessly (without a chat UI), any OpenAI-compatible endpoint works — see `PROMPT.md`'s Appendix for environment setup.
+**No API key required on your end.** The model you pasted into handles the calls. If you want to run this headlessly (without a chat UI), any OpenAI-compatible endpoint works. See `PROMPT.md`'s Appendix for environment setup.
 
 ---
 
@@ -166,7 +166,7 @@ You'll see fields like `agent`, `role`, `wave`, `claim`, and `evidence.location`
 
 ## Minute 6–8: verify the chain and run the reward-hack check
 
-Two scripts ship in this repo. Both are stdlib-only Python — no install needed.
+Two scripts ship in this repo. Both are stdlib-only Python, no install needed.
 
 **Verify the HMAC chain** (confirms nothing was edited after the fact):
 
@@ -201,7 +201,7 @@ You decide how much to spend:
 | `4x8`     | 32        | ~4–5 min            | Sustained scatter |
 | `8x8`     | 64        | ~10+ min            | Heavy run; burns session limits on most plans |
 
-Change `FORMATION=2x4` to whatever fits your task and paste again. The JSONL schema is identical across formations — your downstream tooling doesn't need to change.
+Change `FORMATION=2x4` to whatever fits your task and paste again. The JSONL schema is identical across formations, so your downstream tooling doesn't need to change.
 
 ---
 
@@ -210,28 +210,28 @@ Change `FORMATION=2x4` to whatever fits your task and paste again. The JSONL sch
 Three forks:
 
 - **Just want the receipt log?** You're done. JSONL is portable. Import it into your own pipeline, grep it, or open it in any JSON viewer.
-- **Want tamper-evidence with stronger durability guarantees?** See `UPGRADE_TO_POSTGRES.md` — adds a Postgres + XTDB bitemporal mirror so receipts survive beyond a single file.
-- **Want to change the subagent roles?** Edit `FORMATION` and `TIER_MIX` in the parent prompt, or fork the subagent template and assign different roles. The role rotation list is in `PROMPT.md` — pick whatever axes make sense for your use case.
+- **Want tamper-evidence with stronger durability guarantees?** See `UPGRADE_TO_POSTGRES.md`. Adds a Postgres + XTDB bitemporal mirror so receipts survive beyond a single file.
+- **Want to change the subagent roles?** Edit `FORMATION` and `TIER_MIX` in the parent prompt, or fork the subagent template and assign different roles. The role rotation list is in `PROMPT.md`; pick whatever axes make sense for your use case.
 
 ---
 
 ## What this isn't
 
 - **Not a model.** The subagents are whatever LLM you pasted the prompt into. Quality depends on that model and your input. A vague or very large input produces vague outputs.
-- **Not a guarantee.** The HMAC chain catches tampering after the fact, not before. If the model never computed a real HMAC (it emitted `NO_HMAC`), the chain has a gap — the verifier will flag it.
+- **Not a guarantee.** The HMAC chain catches tampering after the fact, not before. If the model never computed a real HMAC (it emitted `NO_HMAC`), the chain has a gap; the verifier will flag it.
 - **Not a replacement for human judgment.** Treat the output as triage. Cite specific subagent findings with their `evidence.location` or generated artifact. Do not quote the subagents as authority.
-- **Not free-tier-stable.** Free-tier rate limits change. If a formation times out or a vendor goes unreachable mid-run, you'll get a partial JSONL. The verifier handles partial files — it reports how many rows verified and where the chain broke.
+- **Not free-tier-stable.** Free-tier rate limits change. If a formation times out or a vendor goes unreachable mid-run, you'll get a partial JSONL. The verifier handles partial files; it reports how many rows verified and where the chain broke.
 
 ---
 
 ## Glossary
 
 - **JSONL**: one JSON object per line in a file. Each line is one subagent's receipt.
-- **HMAC**: a cryptographic signature computed from the receipt content and a shared key. The chain links each receipt to the previous one — tamper a row and the next row's `prev_sha16` stops matching.
+- **HMAC**: a cryptographic signature computed from the receipt content and a shared key. The chain links each receipt to the previous one; tamper a row and the next row's `prev_sha16` stops matching.
 - **Wave**: a batch of subagents called in parallel from one parent prompt. Wave 2 sees Wave 1's output before starting.
 - **Scatter-gather**: fan out N subagents on different axes, then gather their outputs into one synthesis.
 - **2x4**: 2 waves × 4 subagents per wave = 8 total subagents. The first number is waves; the second is subagents per wave.
-- **Reward hack**: a pattern where a subagent produces output that looks correct without doing the actual work — e.g., claiming a file:line citation without quoting anything real, or asserting consensus that no prior receipt supports.
+- **Reward hack**: a pattern where a subagent produces output that looks correct without doing the actual work; e.g., claiming a file:line citation without quoting anything real, or asserting consensus that no prior receipt supports.
 - **`verb: PASS`**: a subagent found nothing in its scope (or has nothing to add). A legitimate result; not a failure.
 
 ---
@@ -274,7 +274,7 @@ Add `--dry-run` to see the plan without making API calls.
 | Model returns prose instead of JSONL | System prompt wasn't set as the first message | Move the template block to the system/context slot, not the user message |
 | `HMAC mismatch` on every row | Writer key and verifier key differ | Check `HMAC_KEY` in the parent prompt matches `CHAIN_HMAC_KEY` env var |
 | `prev_sha16_mismatch` on row 2 | Subagent skipped a receipt or mis-ordered output | Check for missing rows; re-run with a fresh file |
-| Many `CITATION-MISSING` flags | Model made capability claims without citing receipts | This is the detector doing its job — review those rows manually |
+| Many `CITATION-MISSING` flags | Model made capability claims without citing receipts | This is the detector doing its job; review those rows manually |
 | `NO_HMAC` in `this_sha16` field | Model couldn't compute HMAC (common on constrained hosts) | Expected behavior; verifier flags it; not a chain break |
 | Empty or very short output | Input was too large or too vague | Split the input into smaller chunks; use `1x4` formation first |
 | All 8 subagents produce near-identical outputs | Scatter axis wasn't specified per agent | Add an explicit per-agent stance/role list to your TARGET |
@@ -283,7 +283,7 @@ Add `--dry-run` to see the plan without making API calls.
 
 ## Self-redteam: what a skeptical 10-minute trial user will complain about
 
-The workflow depends on the model executing the parent prompt faithfully. A model that shortcuts — skipping waves, faking HMAC values, reusing the same claim across subagents — produces a JSONL that looks complete but isn't. The reward-hack detector catches several of these patterns, but not all of them. A model can produce syntactically valid, HMAC-correct JSONL with substantively empty findings and the tooling will exit 0. The only real check is reading the `claim` and `evidence.detail` (or the generated artifact) yourself and asking whether it describes something real about your input. The tooling is a floor, not a ceiling. Your judgment is still required.
+The workflow depends on the model executing the parent prompt faithfully. A model that shortcuts (skipping waves, faking HMAC values, reusing the same claim across subagents) produces a JSONL that looks complete but isn't. The reward-hack detector catches several of these patterns, but not all of them. A model can produce syntactically valid, HMAC-correct JSONL with substantively empty findings and the tooling will exit 0. The only real check is reading the `claim` and `evidence.detail` (or the generated artifact) yourself and asking whether it describes something real about your input. The tooling is a floor, not a ceiling. Your judgment is still required.
 
 ---
 

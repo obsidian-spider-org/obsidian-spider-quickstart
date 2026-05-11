@@ -6,21 +6,21 @@ confidence: "7/8 (no quorum certificate)"
 
 # obsidian-spider-quickstart
 
-> Cost-aware routing swarm for LLMs: one parent call dispatches N subagents, each routed to the cheapest model that does the job, and one synthesis pass gathers them. Signed-log audit. Multi-platform.
+> Cost-aware routing swarm for LLMs: one parent call dispatches N subagents, each routed to the cheapest model that does the job, and one final pass gathers them. Signed-log audit. Multi-platform.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Built with Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![MCP-compatible](https://img.shields.io/badge/MCP-compatible-purple)](https://modelcontextprotocol.io/)
 [![GitHub mirror](https://img.shields.io/badge/GitHub-obsidian--spider--org-181717?logo=github)](https://github.com/obsidian-spider-org/obsidian-spider-quickstart)
 
-I built a markdown prompt that implements a cost-aware routing swarm: one parent call dispatches N independent subagents, each producing one perspective on whatever input you hand it, and the parent gathers them into a single synthesis. Cheap models handle cheap work; frontier models only run the synthesis pass. Every subagent's output is written to an HMAC-signed JSONL log you can audit later. Two stdlib-only Python helpers verify the cryptographic chain and flag common reward-hacking patterns. MIT-licensed, no telemetry.
+I built a markdown prompt that runs a cost-aware routing swarm: one parent call dispatches N independent subagents, each producing one perspective on whatever input you hand it, and the parent gathers them into a single synthesis. Cheap models handle cheap work; frontier models only run the final gather. Every subagent's output is written to an HMAC-signed JSONL log you can audit later. Two stdlib-only Python helpers verify the cryptographic chain and flag common reward-hacking patterns. MIT-licensed, no telemetry.
 
 **Multi-platform.** The pattern works on any host where a parent agent can launch subagents:
 
-- **GitHub Copilot Pro+** — the current pricing window; one parent premium request fans out to many subagents inside the same message (highest leverage)
+- **GitHub Copilot Pro+** — the current pricing window; one parent premium request fans out to many subagents inside the same message (highest leverage right now)
 - **Free vendor mesh** — OpenRouter / Groq / Together / Cerebras free tiers, with backoff/retry/durable-workflow wrapper
 - **Claude Code** — Agent tool subagents
-- **Anywhere a parent agent can launch subagents** — the cost-tier routing is the load-bearing value-prop, not any one vendor
+- **Anywhere a parent agent can launch subagents** — the cost-tier routing is the part that matters, not any one vendor
 
 The pattern is general across use cases too. Code review is one example; so are batch image-prompt generation, markdown drafting variants, decision-room quorums, refactor exploration, schema design, A/B copy generation, and test-case brainstorming. You decide what to fan out and what to gather.
 
@@ -56,7 +56,7 @@ The prompt template doesn't hardcode any one use case. You write what you want f
 6. Read the signed log at the path run_wave.py prints (./run_<ts>.jsonl by default)
 ```
 
-A sample run output lives at `examples/sample_1x4_pr_review.jsonl` — pass it through `python3 hmac_verifier.py examples/sample_1x4_pr_review.jsonl` to see chain verification on real data.
+A sample run output lives at `examples/sample_1x4_pr_review.jsonl`. Pass it through `python3 hmac_verifier.py examples/sample_1x4_pr_review.jsonl` to see chain verification on real data.
 
 ---
 
@@ -64,21 +64,21 @@ A sample run output lives at `examples/sample_1x4_pr_review.jsonl` — pass it t
 
 - A JSONL audit trail of N subagents independently working on the same input from different angles
 - HMAC-signed receipts you can re-verify later with one stdlib Python script
-- One parent call fans out to N subagents inside the same message, which on Copilot Pro+ today runs an order of magnitude or two cheaper than the same work as raw API calls. The measured ratio sits around 100x to 1000x depending on which frontier model you'd otherwise pay for; **measure your own** with the calculator and four worked examples in [`docs/COST_MODEL.md`](docs/COST_MODEL.md)
+- One parent call fans out to N subagents inside the same message, which on Copilot Pro+ today runs an order of magnitude or two cheaper than the same work as raw API calls. The measured ratio sits around 100x to 1000x depending on which frontier model you'd otherwise pay for. **Measure your own** with the calculator and four worked examples in [`docs/COST_MODEL.md`](docs/COST_MODEL.md)
 - A reward-hack pattern detector that flags common LLM failure modes (consensus theater, citation-shape gaming, mode-drift)
-- Three profile sizes to pick from (2x2 demo, 4x4 recommended-start, 8x8 stress-test) — see `profiles/`
+- Three profile sizes to pick from (2x2 demo, 4x4 recommended-start, 8x8 stress-test). See `profiles/`.
 - An optional MCP server stub for Claude Desktop, Cursor, and VSCode-MCP clients
 
-To be clear about pricing: the parent call is fully paid premium (Copilot Pro+ at $39/mo plus the premium-request multiplier — ~$0.30 per call on GPT-5.5 at 7.5×). The savings ratio is paid-parent vs same-work-as-raw-API, not parent-vs-nothing. GitHub announced [usage-based Copilot billing effective June 1, 2026](https://github.blog/news-insights/company-news/github-copilot-is-moving-to-usage-based-billing/); the current Copilot subagent pricing window is closing — measure your own savings before then. The pattern keeps working after the transition on Copilot, on free vendor mesh, and on Claude Code — the cost-savings multiplier compresses on Copilot, the routing pattern does not. See [GIFT_AND_OFFER.md](GIFT_AND_OFFER.md) for paid tiers (audits, hardening sprints, retainers).
+To be clear about pricing: the parent call is fully paid premium (Copilot Pro+ at $39/mo plus the premium-request multiplier, so ~$0.30 per call on GPT-5.5 at 7.5×). The savings ratio is paid-parent vs same-work-as-raw-API, not parent-vs-nothing. GitHub announced [usage-based Copilot billing effective June 1, 2026](https://github.blog/news-insights/company-news/github-copilot-is-moving-to-usage-based-billing/); the current Copilot subagent pricing window is closing, so measure your own savings before then. The pattern keeps working after the transition on Copilot, on free vendor mesh, and on Claude Code. The cost-savings multiplier compresses on Copilot specifically; the routing pattern does not. See [GIFT_AND_OFFER.md](GIFT_AND_OFFER.md) for paid tiers (audits, hardening sprints, retainers).
 
 ---
 
 ## What it doesn't do
 
-- The cost-savings number is a ratio, not an absolute. If you weren't going to pay for raw API anyway, you aren't "saving" anything — measure your own with the calculator
+- The cost-savings number is a ratio, not an absolute. If you weren't going to pay for raw API anyway, you aren't "saving" anything. Measure your own with the calculator.
 - Inside-parent-message subagent counting on Copilot is current pricing-window behavior; multipliers and behaviors shift with [GitHub's June 1, 2026 billing transition](https://github.blog/news-insights/company-news/github-copilot-is-moving-to-usage-based-billing/)
 - It surfaces quorum-style misses; it does not fix a broken pipeline for you
-- It does not include the orchestrator, vendor-mesh telemetry, CI/CD harness, or prompt-evolution loop — those stay internal
+- It does not include the orchestrator, vendor-mesh telemetry, CI/CD harness, or prompt-evolution loop. Those stay internal.
 - It does not promise any specific quality improvement; measure on your own work
 
 ---
@@ -102,7 +102,7 @@ LICENSE                          # MIT
 
 ## Profiles
 
-Pick the profile that matches your scope. Most projects stay at `2x2` and never need to climb. `Subagent` is generic — it's whatever you ask each agent to do (review, draft, propose, generate, critique, etc.).
+Pick the profile that matches your scope. Most projects stay at `2x2` and never need to climb. `Subagent` is generic; it's whatever you ask each agent to do (review, draft, propose, generate, critique, etc.).
 
 | Profile | Waves × Subagents | Total | When to use |
 |---|---|---|---|

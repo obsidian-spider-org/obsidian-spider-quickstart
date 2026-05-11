@@ -10,11 +10,11 @@ confidence: "7/8 (no quorum certificate)"
 
 Everything in this repo is MIT-licensed and free to use, fork, modify, embed, sell — whatever. No attribution required beyond what MIT specifies. No telemetry. No license keys. No "free tier."
 
-The gift is a general-purpose **cost-aware routing swarm** primitive for LLMs: one parent call dispatches N subagents, each routed to the cheapest model that does the job, and the parent gathers them into one synthesis. Cheap models for cheap work; frontier models only for the synthesis pass. Fan-out for anything — images, markdown, code, decisions, drafts. PR review is one example among many.
+The gift is a general-purpose **cost-aware routing swarm** primitive for LLMs: one parent call dispatches N subagents, each routed to the cheapest model that does the job, and the parent gathers them into one synthesis. Cheap models for cheap work; frontier models only for the final gather. Fan-out for anything: images, markdown, code, decisions, drafts. PR review is one example among many.
 
-**Multi-platform.** The pattern works on GitHub Copilot Pro+ (the current pricing window, highest current leverage), on free vendor mesh (OpenRouter / Groq / Together / Cerebras with backoff/retry), on Claude Code's Agent tool, and on anywhere a parent agent can launch subagents. Multi-tier cost awareness is the load-bearing value-prop — not any one vendor.
+**Multi-platform.** The pattern works on GitHub Copilot Pro+ (the current pricing window, highest current leverage), on free vendor mesh (OpenRouter / Groq / Together / Cerebras with backoff/retry), on Claude Code's Agent tool, and on anywhere a parent agent can launch subagents. The part that matters is multi-tier cost awareness, not any one vendor.
 
-**Is this a Copilot billing bypass?** No. The parent call is fully paid premium — Copilot Pro+ at $39/mo plus premium-request multipliers (7.5× for GPT-5.5 = $0.30 per parent call against the overage budget). The savings come from the subagent fan-out feature Copilot advertised, applied to a paid premium parent. The known bug report at [microsoft/vscode#292452](https://github.com/microsoft/vscode/issues/292452) describes a different pattern (free parent → premium subagents); this workflow uses a paid premium parent calling a mix of paid and free subagents. The June 1 billing transition will change the multiplier math; the pattern works on Copilot, on free vendor mesh, on Claude Code, and on anywhere a parent agent can launch subagents.
+**Is this a Copilot billing bypass?** No. The parent call is fully paid premium: Copilot Pro+ at $39/mo plus premium-request multipliers (7.5× for GPT-5.5 = $0.30 per parent call against the overage budget). The savings come from the subagent fan-out feature Copilot advertised, applied to a paid premium parent. The known bug report at [microsoft/vscode#292452](https://github.com/microsoft/vscode/issues/292452) describes a different pattern (free parent → premium subagents); this workflow uses a paid premium parent calling a mix of paid and free subagents. The June 1 billing transition will change the multiplier math; the pattern still works on Copilot, on free vendor mesh, on Claude Code, and on anywhere a parent agent can launch subagents.
 
 What you get:
 - A markdown prompt that fans out free Copilot subagents from one parent call (use-case-agnostic)
@@ -43,7 +43,7 @@ The point isn't any one row. The point is the pattern. Anything you'd ordinarily
 
 **Why give this away?** Two reasons:
 
-1. The pattern works better when more people use it. Multi-tier cost-aware routing is the load-bearing value-prop for affordable LLM-driven work, and GitHub announced [usage-based Copilot billing effective June 1, 2026](https://github.blog/news-insights/company-news/github-copilot-is-moving-to-usage-based-billing/); the current Copilot subagent pricing window is closing. Measure your own savings before the transition. The pattern still works after — on Copilot, on free vendor mesh, on Claude Code — the savings multiplier compresses on Copilot specifically, the routing pattern does not.
+1. The pattern works better when more people use it. Multi-tier cost-aware routing is the part that matters for affordable LLM-driven work, and GitHub announced [usage-based Copilot billing effective June 1, 2026](https://github.blog/news-insights/company-news/github-copilot-is-moving-to-usage-based-billing/); the current Copilot subagent pricing window is closing. Measure your own savings before the transition. The pattern still works after, on Copilot, on free vendor mesh, on Claude Code. The savings multiplier compresses on Copilot specifically; the routing pattern does not.
 
 2. The pattern is also the recruiting funnel for the offer (below).
 
@@ -67,7 +67,7 @@ I run a much heavier internal version of this for my own work. It includes:
 
 ## The offer (paid; clearly distinct from the gift)
 
-After 16 months of running large LLM swarms (8x8 = 64 agents at session-limit-burn rates), I've documented a catalogue of failure patterns. The kind of thing most small and mid-sized teams haven't hit yet because they're not running swarms — but the same patterns show up the first time someone wires a single LLM agent into production. Examples:
+After 16 months of running large LLM swarms (8x8 = 64 agents at session-limit-burn rates), I've documented a catalogue of failure patterns. Most small and mid-sized teams haven't hit these yet because they're not running swarms, but the same patterns show up the first time someone wires a single LLM agent into production. Examples:
 
 - **Spec/action mismatch**: agent writes "HMAC-attested" in a spec and inserts cosmetic non-HMAC values 5 minutes later in the same session
 - **Consensus theater**: single-substrate role-played "8/8 quorum" with no actual independent voters
@@ -76,7 +76,7 @@ After 16 months of running large LLM swarms (8x8 = 64 agents at session-limit-bu
 - **Citation-shape gaming**: agent emits `seq=1, sha16=0000...` to satisfy regex without referencing anything real
 - **Workslop ratio inflation**: "39 tests passed" when 19 were run; the extra 20 are test-function count, not run results
 
-I'm happy to look at any AI-agent workflow — from a single agent doing one simple thing, all the way up to a full swarm. If you'd rather not rediscover these patterns yourself, here's the engagement ladder.
+I'm happy to look at any AI-agent workflow, from a single agent doing one simple thing all the way up to a full swarm. If you'd rather not rediscover these patterns yourself, here's the engagement ladder.
 
 ### Engagement ladder
 
@@ -94,7 +94,7 @@ Design-partner cohort: first 5 paid engagements at half-price for case-study + n
 
 ### Why T4 (refund-on-no-finding) is genuinely novel
 
-Every named pentest incumbent — [CIS](https://www.cisecurity.org/terms-and-conditions-table-of-contents/penetration-testing-services-terms-and-conditions), Trail of Bits, Bishop Fox, [Netragard](https://netragard.com/what-you-need-to-know-about-pentesting-liability/) — explicitly disclaims findings guarantees ("there is no guarantee that every vulnerability will be identified during a penetration test"). The closest published precedent is satisfaction-conditional payment (Atlant Security). Bug-bounty platforms run a pay-per-finding model, which is the buyer-side mirror; refund-on-no-finding as a published boutique-audit SKU has not yet been formalized in the AI-security tier.
+Every named pentest incumbent ([CIS](https://www.cisecurity.org/terms-and-conditions-table-of-contents/penetration-testing-services-terms-and-conditions), Trail of Bits, Bishop Fox, [Netragard](https://netragard.com/what-you-need-to-know-about-pentesting-liability/)) explicitly disclaims findings guarantees ("there is no guarantee that every vulnerability will be identified during a penetration test"). The closest published precedent is satisfaction-conditional payment (Atlant Security). Bug-bounty platforms run a pay-per-finding model, which is the buyer-side mirror; refund-on-no-finding as a published boutique-audit SKU has not yet been formalized in the AI-security tier.
 
 Why we are confident it works:
 
@@ -112,7 +112,7 @@ Most small and mid-sized teams shipping LLM agents in 2026 don't have:
 - Content-hash regression tests for prompt outputs
 - Append-only, tamper-evident logs of what each agent actually said
 
-I've been running all three daily for 16 months. The T3 check is just me bringing that discipline to your stack and writing down what's missing, in a 4-page report. If you already have all three, the check is short and you keep the report — no refund needed because it's a non-refundable starter.
+I've been running all three daily for 16 months. The T3 check is just me bringing that discipline to your stack and writing down what's missing, in a 4-page report. If you already have all three, the check is short and you keep the report. No refund needed because it's a non-refundable starter.
 
 ### The guarantee, in plain English
 
@@ -152,7 +152,7 @@ This is a gift framed as a gift, and an offer framed as an offer. They are disti
 
 What I'm building toward: the open-source scatter-gather pattern becomes common enough that "I want a red-team audit on my swarm" becomes a recognizable purchase decision. When you hit a class of failure you can't self-resolve in your own time-budget, you have somewhere to go.
 
-The 16 months of scar tissue is the inventory I'm selling — not the swarm orchestration code.
+The 16 months of scar tissue is the inventory I'm selling, not the swarm orchestration code.
 
 ---
 

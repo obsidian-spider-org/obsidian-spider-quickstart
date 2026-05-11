@@ -18,7 +18,7 @@ This document shows the math behind the "100× to 1000× cheaper than raw API" r
 
 This is **not** a billing bypass. The parent call against a premium model (Copilot Pro+ GPT-5.5 in my case) is charged in full: 7.5 premium requests × $0.04 overage = $0.30 per parent call, debited against my paid plan.
 
-What this **is**: paying for premium, then using the subagent fan-out feature Copilot advertised to maximize what one paid premium request does. The savings multiplier below compares my paid-parent-call cost against doing the same work as 40 separate raw-API calls — not against any free or unbilled call on Copilot's side.
+What this **is**: paying for premium, then using the subagent fan-out feature Copilot advertised to maximize what one paid premium request does. The savings multiplier below compares my paid-parent-call cost against doing the same work as 40 separate raw-API calls, not against any free or unbilled call on Copilot's side.
 
 The bug report at [microsoft/vscode#292452](https://github.com/microsoft/vscode/issues/292452) describes free-model-parent calling premium-model-subagents, which is a different pattern from this workflow. This workflow uses a premium parent calling a mix of paid and free subagents.
 
@@ -51,7 +51,7 @@ Note: prompt caching reduces these materially (Claude cached reads $0.30/Mtok So
 
 One parent call on GPT-5.5 = 7.5 premium requests = $0.30 of overage budget. For Opus 4.7 (15×) the per-parent-call cost is $0.60; for Sonnet 4.6 (1×) it is $0.04.
 
-GitHub [announced usage-based Copilot billing effective 2026-06-01](https://github.blog/news-insights/company-news/github-copilot-is-moving-to-usage-based-billing/). The current pricing window is closing — measure your own savings before the transition.
+GitHub [announced usage-based Copilot billing effective 2026-06-01](https://github.blog/news-insights/company-news/github-copilot-is-moving-to-usage-based-billing/). The current pricing window is closing, so measure your own savings before the transition.
 
 ## Work envelope per parent call
 
@@ -95,11 +95,11 @@ Parent-call cost on Copilot Pro+ at 7.5× multiplier × $0.04 = $0.30.
 | All GPT-5.5 xhigh | $127.50 | $0.30 | **~425×** |
 | Heavy-Opus 11×8 max-burn (88 subagents) | $288.25 | $0.30 | **~961×** |
 
-Range across plausible scenarios: **~123×–961×**. Public-facing language uses **"100× to 1000× depending on which frontier model you'd otherwise pay for"** — honest at both ends.
+Range across plausible scenarios: **~123×–961×**. Public-facing language uses **"100× to 1000× depending on which frontier model you'd otherwise pay for"**, honest at both ends.
 
 ## Multi-tier mix — the real workflow (Copilot is one angle)
 
-Most real workflows don't run all-Opus or all-GPT-5. They mix tiers: cheap models for cheap work (extracting names, summarizing one paragraph, generating one variant), frontier only for the synthesis pass that needs reasoning across the whole gather.
+Most real workflows don't run all-Opus or all-GPT-5. They mix tiers: cheap models for cheap work (extracting names, summarizing one paragraph, generating one variant), frontier only for the final gather that needs reasoning across the whole batch.
 
 Example mix (the 4×4 default, 32 cheap subagents + 8 frontier synthesis):
 
@@ -119,7 +119,7 @@ Parent (Opus 4.7):     200k × $5/M  + 50k × $25/M               = $2.25
 
 **Two things matter here**:
 
-1. **The multi-tier mix saves ~32% on raw API regardless of harness.** Whether you run on raw API, Copilot, or Claude Code, mixing tiers is cheaper than all-frontier. The Copilot per-parent-call billing model is one specific cost-aware routing path layered on top — not the whole story.
+1. **The multi-tier mix saves ~32% on raw API regardless of harness.** Whether you run on raw API, Copilot, or Claude Code, mixing tiers is cheaper than all-frontier. The Copilot per-parent-call billing model is one specific cost-aware routing path layered on top, not the whole story.
 
 2. **On free vendor mesh** (OpenRouter free-tier / Groq free / Together free), the 32 cheap subagents run at $0. Only the synthesis layer costs anything. The savings ratio against raw all-frontier API approaches infinite as your free-tier quota holds.
 
