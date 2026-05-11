@@ -64,7 +64,7 @@ A sample run output lives at `examples/sample_1x4_pr_review.jsonl` — pass it t
 
 - A JSONL audit trail of N subagents independently working on the same input from different angles
 - HMAC-signed receipts you can re-verify later with one stdlib Python script
-- One parent call fans out to N subagents inside the same message, which on Copilot Pro+ today runs an order of magnitude or two cheaper than the same work as raw API calls. The measured ratio sits around 100x to 1000x depending on which frontier model you'd otherwise pay for; **measure your own** with the calculator in the first-comment reply on the HN thread (or `docs/COST_MODEL.md` once published in the repo)
+- One parent call fans out to N subagents inside the same message, which on Copilot Pro+ today runs an order of magnitude or two cheaper than the same work as raw API calls. The measured ratio sits around 100x to 1000x depending on which frontier model you'd otherwise pay for; **measure your own** with the calculator and four worked examples in [`docs/COST_MODEL.md`](docs/COST_MODEL.md)
 - A reward-hack pattern detector that flags common LLM failure modes (consensus theater, citation-shape gaming, mode-drift)
 - Three profile sizes to pick from (2x2 demo, 4x4 recommended-start, 8x8 stress-test) — see `profiles/`
 - An optional MCP server stub for Claude Desktop, Cursor, and VSCode-MCP clients
