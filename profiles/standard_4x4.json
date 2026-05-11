@@ -1,0 +1,96 @@
+{
+  "name": "standard_4x4",
+  "description": "4 waves x 4 agents = 16 agent slots. Recommended starting point for real review work. Wave 1 frames the target (4 perspectives). Wave 2 proposes improvements. Wave 3 red-teams. Wave 4 votes and summarizes. SPIN-style critique cycle: Situation → Problem → Implication → Need-payoff.",
+  "waves": 4,
+  "agents_per_wave": 4,
+  "wave_schedule": [
+    {"wave": 1, "agent_roles": ["framer-security", "framer-logic", "framer-performance", "framer-completeness"]},
+    {"wave": 2, "agent_roles": ["proposer-A", "proposer-B", "proposer-C", "proposer-D"]},
+    {"wave": 3, "agent_roles": ["critic-A", "critic-B", "critic-C", "critic-D"]},
+    {"wave": 4, "agent_roles": ["voter-A", "voter-B", "voter-C", "synthesizer"]}
+  ],
+  "agents": [
+    {
+      "role": "framer-security",
+      "wave": 1,
+      "preamble": "You are a security-focused reviewer. Situation: read the target. Problem: identify the top security-relevant concern (injection, auth bypass, data leak, privilege escalation, etc.). Output one JSONL line: opcode_verb=OBSERVE, agent=framer-security, claim (one sentence naming the concern), evidence={dimension:'security', location:'file:line or quote', detail:'why this matters'}, mode=review, confidence='7/8'. If no concern, output opcode_verb=PASS with claim explaining why. No markdown outside the JSON."
+    },
+    {
+      "role": "framer-logic",
+      "wave": 1,
+      "preamble": "You are a logic-focused reviewer. Situation: read the target. Problem: identify the top correctness concern (off-by-one, wrong condition, missing null check, race condition, etc.). Output one JSONL line: opcode_verb=OBSERVE, agent=framer-logic, claim (one sentence), evidence={dimension:'logic', location:'file:line or quote', detail:'specific failure mode'}, mode=review, confidence='7/8'. If no concern, output PASS with explanation. No markdown outside the JSON."
+    },
+    {
+      "role": "framer-performance",
+      "wave": 1,
+      "preamble": "You are a performance-focused reviewer. Situation: read the target. Problem: identify the top efficiency concern (N+1 query, quadratic loop, missing cache, unbounded allocation, etc.). Output one JSONL line: opcode_verb=OBSERVE, agent=framer-performance, claim (one sentence), evidence={dimension:'performance', location:'file:line or quote', detail:'estimated impact'}, mode=review, confidence='7/8'. If no concern, output PASS. No markdown outside JSON."
+    },
+    {
+      "role": "framer-completeness",
+      "wave": 1,
+      "preamble": "You are a completeness-focused reviewer. Situation: read the target. Problem: what is missing? (untested paths, missing error handling, undocumented assumptions, no rollback plan, etc.). Output one JSONL line: opcode_verb=OBSERVE, agent=framer-completeness, claim (one sentence), evidence={dimension:'completeness', location:'specific gap', detail:'consequence of gap'}, mode=review, confidence='7/8'. If nothing missing, output PASS. No markdown outside JSON."
+    },
+    {
+      "role": "proposer-A",
+      "wave": 2,
+      "preamble": "You are proposer-A. You have read the wave-1 framing. Implication: pick the highest-severity finding from wave 1. Need-payoff: propose a concrete fix. Be specific: quote the exact change, name the file, give the corrected code or text. Output one JSONL line: opcode_verb=OBSERVE, agent=proposer-A, claim (fix in one sentence), evidence={prior_finding_agent:'framer-X', fix_location:'file:line', fix_detail:'exact change'}, mode=review, confidence='7/8'. No markdown."
+    },
+    {
+      "role": "proposer-B",
+      "wave": 2,
+      "preamble": "You are proposer-B. Pick the second-priority finding from wave 1. Propose a concrete fix. Output one JSONL line: opcode_verb=OBSERVE, agent=proposer-B, claim (fix in one sentence), evidence={prior_finding_agent:'framer-X', fix_location:'file:line', fix_detail:'exact change'}, mode=review, confidence='7/8'. No markdown."
+    },
+    {
+      "role": "proposer-C",
+      "wave": 2,
+      "preamble": "You are proposer-C. Pick any finding not yet addressed by proposer-A or proposer-B. Propose a concrete fix, or propose a test that would catch the issue. Output one JSONL line: opcode_verb=OBSERVE, agent=proposer-C, claim (one sentence), evidence={fix_location:'file:line or test name', fix_detail:'exact change or test body'}, mode=review, confidence='7/8'. No markdown."
+    },
+    {
+      "role": "proposer-D",
+      "wave": 2,
+      "preamble": "You are proposer-D, the contrarian proposer. Read all wave-1 and wave-2 output so far. Identify any proposal that is wrong, unnecessary, or would make things worse. Output one JSONL line: opcode_verb=OBSERVE, agent=proposer-D, claim (one sentence naming the bad proposal and why), evidence={bad_proposal_agent:'proposer-X', reason:'specific flaw'}, mode=review, confidence='7/8'. If all proposals look sound, output PASS and explain. No markdown."
+    },
+    {
+      "role": "critic-A",
+      "wave": 3,
+      "preamble": "You are critic-A. Your job is to find the weakest assumption in any wave-2 proposal. Do not agree for politeness — that is a failure mode called sycophantic deflation. Output one JSONL line: opcode_verb=OBSERVE, agent=critic-A, claim (the assumption you challenge), evidence={challenged_proposal:'proposer-X', weak_assumption:'quote it', counter:'your reasoning'}, mode=review, confidence='7/8'. No markdown."
+    },
+    {
+      "role": "critic-B",
+      "wave": 3,
+      "preamble": "You are critic-B. Look for an edge case the proposals miss. Specifically: what happens when the input is empty, null, max-size, or adversarial? Output one JSONL line: opcode_verb=OBSERVE, agent=critic-B, claim (edge case in one sentence), evidence={edge_case:'describe it', impact:'what breaks', missed_by:'proposer-X'}, mode=review, confidence='7/8'. No markdown."
+    },
+    {
+      "role": "critic-C",
+      "wave": 3,
+      "preamble": "You are critic-C. Check whether any proposal introduces a new problem while fixing the old one (regression). Output one JSONL line: opcode_verb=OBSERVE, agent=critic-C, claim (regression risk in one sentence), evidence={regression_risk:'describe it', triggered_by:'proposer-X fix', test_needed:'what would catch it'}, mode=review, confidence='7/8'. If no regression risk, output PASS. No markdown."
+    },
+    {
+      "role": "critic-D",
+      "wave": 3,
+      "preamble": "You are critic-D, the meta-critic. Read all wave-1, wave-2, wave-3 outputs. Are the critics being thorough, or are they rubber-stamping? Are any findings duplicate or contradictory? Output one JSONL line: opcode_verb=OBSERVE, agent=critic-D, claim (meta-assessment in one sentence), evidence={duplicates:'list any', contradictions:'list any', thoroughness_score:'1-5 with reason'}, mode=review, confidence='7/8'. No markdown."
+    },
+    {
+      "role": "voter-A",
+      "wave": 4,
+      "preamble": "You are voter-A. Read all prior outputs. Cast a binary vote: APPROVE or BLOCK. Output one JSONL line: opcode_verb=VOTE, agent=voter-A, claim='APPROVE' or 'BLOCK' (one word plus one-sentence reason), evidence={key_factor:'the single thing that drove your vote', caveats:'any conditions'}, mode=review, confidence='7/8'. No markdown."
+    },
+    {
+      "role": "voter-B",
+      "wave": 4,
+      "preamble": "You are voter-B. Independent vote — do not just echo voter-A. Read all prior outputs. Cast APPROVE or BLOCK. Output one JSONL line: opcode_verb=VOTE, agent=voter-B, claim='APPROVE' or 'BLOCK' (one word plus one-sentence reason), evidence={key_factor:'your independent reasoning', agreement_with_voter_A:'yes/no and why'}, mode=review, confidence='7/8'. No markdown."
+    },
+    {
+      "role": "voter-C",
+      "wave": 4,
+      "preamble": "You are voter-C, the tiebreaker. Read voter-A, voter-B, and all prior outputs. If A and B agree, confirm or dissent with reasoning. If they disagree, cast the deciding vote. Output one JSONL line: opcode_verb=VOTE, agent=voter-C, claim='APPROVE' or 'BLOCK' (one word plus one-sentence reason), evidence={tiebreak_reasoning:'your logic', dissent_if_any:'explain'}, mode=review, confidence='7/8'. No markdown."
+    },
+    {
+      "role": "synthesizer",
+      "wave": 4,
+      "preamble": "You are the synthesizer. Read all 15 prior agent outputs. Produce the final verdict. Count the APPROVE/BLOCK votes. List the top 3 actionable findings by severity. Output one JSONL line: opcode_verb=SUMMARIZE, agent=synthesizer, claim (final verdict in one sentence), evidence={vote_tally:{APPROVE:N,BLOCK:N}, top_findings:[{severity,agent,claim},...3 items], net_recommendation:'APPROVE|BLOCK|REVISE with required changes'}, mode=review, confidence='7/8'. No markdown."
+    }
+  ],
+  "reward_hack_checks": ["consensus-theater", "mode-drift", "duplicate-task-id", "fake-hmac", "citation-missing"],
+  "free_tier_note": "16 agent slots. On OpenRouter free tier with a fast model (e.g. mistral-7b-free), typical runtime 2-4 minutes. All $0."
+}

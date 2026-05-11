@@ -1,0 +1,8 @@
+.env
+control/
+state/
+*.log
+*.tsr
+__pycache__/
+*.pyc
+db/*.jsonl
